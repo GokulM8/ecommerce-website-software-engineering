@@ -1,34 +1,185 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Login</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/login-style.css') }}">
-</head>
-<body>
-  
-<div class="form-container">
-  <form method="POST">
-    <h2>Login to VPMS</h2>
+  <meta charset="UTF-8" />
+  <title>VPMS | Admin Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 
+  <!-- Tailwind with Dark Mode Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <style>
+    /* Ensure links are clickable on mobile */
+    a {
+      -webkit-tap-highlight-color: rgba(59, 130, 246, 0.3);
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+    
+    /* Ensure buttons are clickable */
+    button {
+      -webkit-tap-highlight-color: rgba(59, 130, 246, 0.3);
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+    
+    /* Prevent fixed button from blocking content */
+    #themeToggle {
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center transition-colors">
+
+  <!-- Theme Toggle Button (Fixed Position) -->
+  <button 
+    id="themeToggle"
+    onclick="toggleTheme()"
+    class="fixed top-4 right-4 p-3 rounded-lg bg-white dark:bg-gray-800 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 transition-colors z-50 touch-manipulation"
+    title="Toggle theme"
+    type="button"
+  >
+    <i id="themeIcon" class="fa-solid fa-moon text-gray-700 dark:text-gray-300"></i>
+  </button>
+
+  <!-- Login Card -->
+  <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 transition-colors mx-4">
+
+    <!-- Logo / Title -->
+    <div class="flex items-center gap-3 mb-6 justify-center">
+      <div class="w-10 h-10 bg-blue-600 dark:bg-blue-500 text-white rounded-lg flex items-center justify-center font-bold">
+        P
+      </div>
+      <div>
+        <h1 class="text-xl font-bold text-gray-800 dark:text-white">VPMS</h1>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Parking System</p>
+      </div>
+    </div>
+
+    <h2 class="text-2xl font-bold text-center text-gray-800 dark:text-white mb-2">
+      Admin Login
+    </h2>
+    <p class="text-center text-gray-500 dark:text-gray-400 text-sm mb-6">
+      Sign in to manage parking operations
+    </p>
+
+    <!-- Error Message -->
     {% if error %}
-      <p class="error">{{ error }}</p>
+      <div class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300 text-sm p-3 rounded-lg mb-4">
+        {{ error }}
+      </div>
     {% endif %}
 
-    <div class="input-group">
-      <input type="email" name="email" required>
-      <label>Email</label>
-    </div>
+    <!-- Login Form -->
+    <form method="POST" class="space-y-5">
 
-    <div class="input-group">
-      <input type="password" name="password" required>
-      <label>Password</label>
-    </div>
+      <!-- Email -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+          Email Address
+        </label>
+        <input
+          type="email"
+          name="email"
+          required
+          placeholder="admin@vpms.com"
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
 
-    <button type="submit">Login</button>
+      <!-- Password -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+          Password
+        </label>
+        <input
+          type="password"
+          name="password"
+          required
+          placeholder="••••••••"
+          class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
 
-    <p>Don’t have an account? <a href="/register">Register</a></p>
-  </form>
-</div>
+      <!-- Login Button -->
+      <button
+        type="submit"
+        class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 active:bg-blue-800 transition touch-manipulation"
+      >
+        Login
+      </button>
+    </form>
+
+    <!-- Register Link -->
+    <p class="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
+      Don't have an account?
+      <a href="/register" class="text-blue-600 dark:text-blue-400 font-medium hover:underline active:text-blue-700 dark:active:text-blue-300 touch-manipulation inline-block">
+        Register
+      </a>
+    </p>
+
+  </div>
+
+<script>
+// Theme initialization - must run before page renders
+(function() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  const html = document.documentElement;
+  if (savedTheme === 'dark') {
+    html.classList.add('dark');
+  }
+})();
+
+// Theme Toggle Functionality
+function toggleTheme() {
+  const html = document.documentElement;
+  const themeIcon = document.getElementById('themeIcon');
+  
+  html.classList.toggle('dark');
+  
+  if (html.classList.contains('dark')) {
+    themeIcon.classList.remove('fa-moon');
+    themeIcon.classList.add('fa-sun');
+    localStorage.setItem('theme', 'dark');
+  } else {
+    themeIcon.classList.remove('fa-sun');
+    themeIcon.classList.add('fa-moon');
+    localStorage.setItem('theme', 'light');
+  }
+  
+  // Prevent event bubbling
+  event.stopPropagation();
+  return false;
+}
+
+// Update icon after DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+  const html = document.documentElement;
+  const themeIcon = document.getElementById('themeIcon');
+  
+  if (html.classList.contains('dark') && themeIcon) {
+    themeIcon.classList.remove('fa-moon');
+    themeIcon.classList.add('fa-sun');
+  }
+});
+
+// Ensure links work on mobile - prevent any interference
+document.addEventListener('touchstart', function(e) {
+  // Allow all touch events to propagate normally
+}, { passive: true });
+</script>
 
 </body>
 </html>

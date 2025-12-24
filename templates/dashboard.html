@@ -1,73 +1,431 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>VPMS Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    
+  <meta charset="UTF-8">
+  <title>VPMS | Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tailwind with Dark Mode Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
 </head>
-<body>
 
-<!-- SIDEBAR -->
-<div class="sidebar">
-    <h2>VPMS</h2>
-    <a href="/vehicle-entry">➕ Vehicle Entry</a>
-    <a href="/vehicle-exit">🚗 Vehicle Exit</a>
-    <a href="/logout">🚪 Logout</a>
-</div>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
 
-<!-- MAIN CONTENT -->
-<div class="main">
+<div class="flex min-h-screen">
 
-    <!-- Welcome Card -->
-    <div class="card">
-        <h3>Welcome, {{ username }}</h3>
-        <p>Manage parking slots, vehicles, and fees from one place.</p>
-    </div>
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-white dark:bg-gray-800 shadow-md p-6 flex flex-col h-screen sticky top-0 transition-colors">
+    <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-8">VPMS</h2>
 
-    <!-- Slot Status -->
-    <div class="card">
-        <h3>Parking Slot Status</h3>
-        <table>
-            <tr>
-                <th>Slot</th>
-                <th>Status</th>
-            </tr>
-            {% for slot in slots %}
-            <tr>
-                <td>{{ slot.slot_name }}</td>
-                <td class="{{ 'available' if slot.status == 'Available' else 'occupied' }}">
-                    {{ slot.status }}
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
+    <nav class="flex-1 space-y-2">
+      <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+        <i class="fa-solid fa-chart-line"></i> Dashboard
+      </a>
+      <a href="/payments" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+        <i class="fa-solid fa-credit-card"></i> Payments
+      </a>
+      <a href="/vehicle-entry" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Vehicle Entry
+      </a>
+      <a href="/vehicle-exit" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Vehicle Exit
+      </a>
+    </nav>
 
-    <!-- Vehicle Records -->
-    <div class="card">
-        <h3>Vehicle Parking Records</h3>
-        <table>
-            <tr>
-                <th>Vehicle No</th>
-                <th>Owner</th>
-                <th>Slot</th>
-                <th>Entry</th>
-                <th>Exit</th>
-                <th>Fee (₹)</th>
-            </tr>
+    <a href="/logout" class="flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </a>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 p-8">
+    <div class="flex gap-6">
+      
+      <!-- LEFT CONTENT AREA -->
+      <div class="flex-1">
+        <!-- HEADER -->
+        <div class="mb-8 flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold dark:text-white">Welcome, {{ username }}</h1>
+            <p class="text-gray-500 dark:text-gray-400">
+              Manage parking slots, vehicles, and payments
+            </p>
+          </div>
+
+          <!-- TOP RIGHT -->
+          <div class="flex items-center gap-4">
+            <!-- THEME TOGGLE -->
+            <button 
+              id="themeToggle"
+              onclick="toggleTheme()"
+              class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title="Toggle theme"
+            >
+              <i id="themeIcon" class="fa-solid fa-moon text-gray-700 dark:text-gray-300"></i>
+            </button>
+
+            <!-- PROFILE -->
+            <div class="relative">
+              <button onclick="toggleProfile()"
+                class="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                <i class="fa-solid fa-user"></i>
+                <span>{{ username }}</span>
+                <i class="fa-solid fa-chevron-down text-sm"></i>
+              </button>
+
+              <div id="profileMenu"
+                class="hidden absolute right-0 mt-2 w-52 bg-white dark:bg-gray-800 shadow-lg rounded-xl p-4 z-50 border border-gray-200 dark:border-gray-700">
+                <p class="font-semibold dark:text-white">{{ username }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">{{ user_email }}</p>
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3 space-y-1">
+                  <a href="/profile"
+                    class="block text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-3 py-2 rounded-lg">
+                    <i class="fa-solid fa-user-pen mr-2"></i> Edit Profile
+                  </a>
+                  <a href="/logout"
+                    class="block text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 px-3 py-2 rounded-lg">
+                    <i class="fa-solid fa-right-from-bracket mr-2"></i> Logout
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VEHICLE RECORDS -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 mb-6 transition-colors">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold dark:text-white">Vehicle Parking Records</h2>
+            
+            <div class="flex items-center gap-3">
+              <!-- SEARCH -->
+              <div class="relative">
+                <input 
+                  type="text" 
+                  id="searchInput"
+                  placeholder="Search by vehicle no or owner..."
+                  class="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onkeyup="filterRecords()"
+                >
+                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400 dark:text-gray-500"></i>
+              </div>
+              
+              <!-- FILTER -->
+              <select id="filterSelect"
+                class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                onchange="filterRecords()">
+                <option value="all">All Records</option>
+                <option value="active">Currently Parked</option>
+                <option value="completed">Completed</option>
+              </select>
+              
+              <!-- SORT -->
+              <select id="sortSelect"
+                class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                onchange="sortRecords()">
+                <option value="new">Newest First</option>
+                <option value="old">Oldest First</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- CARD VIEW -->
+          <div id="recordsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for v in vehicles %}
-            <tr>
-                <td>{{ v.vehicle_no }}</td>
-                <td>{{ v.owner_name }}</td>
-                <td>{{ v.slot_id }}</td>
-                <td>{{ v.entry_time }}</td>
-                <td>{{ v.exit_time or '-' }}</td>
-                <td>{{ v.fee or '-' }}</td>
-            </tr>
+            <div class="vehicle-card border rounded-xl p-5 hover:shadow-lg transition-shadow cursor-pointer
+              {% if v.exit_time %}
+                border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50
+              {% else %}
+                border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30
+              {% endif %}"
+              data-vehicle-no="{{ v.vehicle_no|lower }}"
+              data-owner="{{ v.owner_name|lower }}"
+              data-status="{% if v.exit_time %}completed{% else %}active{% endif %}"
+              data-entry="{{ v.entry_time }}">
+              
+              <!-- HEADER -->
+              <div class="flex items-start justify-between mb-4">
+                <div>
+                  <h3 class="font-bold text-lg text-gray-800 dark:text-white">{{ v.vehicle_no }}</h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-300">{{ v.owner_name }}</p>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold
+                  {% if v.exit_time %}
+                    bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200
+                  {% else %}
+                    bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-200
+                  {% endif %}">
+                  {% if v.exit_time %}
+                    <i class="fa-solid fa-check-circle mr-1"></i> Completed
+                  {% else %}
+                    <i class="fa-solid fa-car mr-1"></i> Parked
+                  {% endif %}
+                </span>
+              </div>
+              
+              <!-- DETAILS -->
+              <div class="space-y-2 mb-4">
+                <div class="flex items-center text-sm">
+                  <i class="fa-solid fa-map-marker-alt text-gray-400 dark:text-gray-500 w-5"></i>
+                  <span class="text-gray-600 dark:text-gray-300">Slot: <span class="font-semibold">{{ v.slot_id }}</span></span>
+                </div>
+                
+                <div class="flex items-center text-sm">
+                  <i class="fa-solid fa-arrow-right-to-bracket text-green-500 dark:text-green-400 w-5"></i>
+                  <span class="text-gray-600 dark:text-gray-300">Entry: <span class="font-medium">{{ v.entry_time }}</span></span>
+                </div>
+                
+                {% if v.exit_time %}
+                <div class="flex items-center text-sm">
+                  <i class="fa-solid fa-arrow-right-from-bracket text-red-500 dark:text-red-400 w-5"></i>
+                  <span class="text-gray-600 dark:text-gray-300">Exit: <span class="font-medium">{{ v.exit_time }}</span></span>
+                </div>
+                {% else %}
+                <div class="flex items-center text-sm">
+                  <i class="fa-solid fa-clock text-orange-500 dark:text-orange-400 w-5"></i>
+                  <span class="text-orange-600 dark:text-orange-400 font-medium">Currently Parked</span>
+                </div>
+                {% endif %}
+              </div>
+              
+              <!-- FEE -->
+              <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-600 dark:text-gray-300">Parking Fee</span>
+                  <span class="text-lg font-bold text-blue-600 dark:text-blue-400">
+                    {% if v.fee %}
+                      ₹{{ v.fee }}
+                    {% else %}
+                      <span class="text-gray-400 dark:text-gray-500">Pending</span>
+                    {% endif %}
+                  </span>
+                </div>
+              </div>
+            </div>
             {% endfor %}
-        </table>
-    </div>
+          </div>
+          
+          <!-- EMPTY STATE -->
+          <div id="emptyState" class="hidden text-center py-12">
+            <i class="fa-solid fa-car text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
+            <p class="text-gray-500 dark:text-gray-400 text-lg">No records found</p>
+            <p class="text-gray-400 dark:text-gray-500 text-sm mt-2">Try adjusting your search or filter</p>
+          </div>
+        </div>
 
+        <!-- OCCUPIED SLOTS -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 transition-colors">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold dark:text-white">Parking Slots</h2>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- OCCUPIED SLOTS -->
+            <div>
+              <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">Occupied Slots</h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {% for slot in slots %}
+                  {% if slot.status == 'Occupied' %}
+                  <div class="p-4 rounded-lg border-2 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/30 text-center">
+                    <div class="flex items-center justify-center mb-2">
+                      <i class="fa-solid fa-car text-red-600 dark:text-red-400 text-xl"></i>
+                    </div>
+                    <p class="font-bold text-red-700 dark:text-red-300">{{ slot.slot_name }}</p>
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-1">Occupied</p>
+                  </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+
+              {% set occupied_count = slots|selectattr('status', 'equalto', 'Occupied')|list|length %}
+              {% if occupied_count == 0 %}
+              <div class="text-center py-6 text-gray-500 dark:text-gray-400">
+                <i class="fa-solid fa-parking text-3xl mb-2"></i>
+                <p class="text-sm">No slots currently occupied</p>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- AVAILABLE SLOTS -->
+            <div>
+              <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">Available Slots</h3>
+              <div class="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                {% for slot in slots %}
+                  {% if slot.status == 'Available' %}
+                  <div class="p-2 rounded-lg border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/30 text-center">
+                    <div class="flex items-center justify-center mb-1">
+                      <i class="fa-solid fa-parking text-green-600 dark:text-green-400 text-sm"></i>
+                    </div>
+                    <p class="font-semibold text-green-700 dark:text-green-300 text-xs">{{ slot.slot_name }}</p>
+                    <p class="text-xs text-green-600 dark:text-green-400 mt-0.5">Free</p>
+                  </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+
+              {% set available_count = slots|selectattr('status', 'equalto', 'Available')|list|length %}
+              {% if available_count == 0 %}
+              <div class="text-center py-6 text-gray-500 dark:text-gray-400">
+                <i class="fa-solid fa-car text-2xl mb-2"></i>
+                <p class="text-sm">All slots are occupied</p>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDEBAR - TOTAL AMOUNT -->
+      <aside class="w-80 flex-shrink-0">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-6 sticky top-8 transition-colors">
+          <div class="text-center mb-6">
+            <i class="fa-solid fa-wallet text-4xl text-blue-600 dark:text-blue-400 mb-3"></i>
+            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">Total Revenue</h3>
+          </div>
+          
+          <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl p-6 text-center">
+            <p class="text-gray-600 dark:text-gray-300 text-sm mb-2">Amount Collected</p>
+            <h2 class="text-4xl font-bold text-blue-700 dark:text-blue-400">₹ {{ total_amount }}</h2>
+          </div>
+
+          <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between text-sm mb-2">
+              <span class="text-gray-600 dark:text-gray-300">Total Slots</span>
+              <span class="font-semibold dark:text-white">{{ slots|length }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm mb-2">
+              <span class="text-gray-600 dark:text-gray-300">Occupied</span>
+              <span class="font-semibold text-red-600 dark:text-red-400">{{ slots|selectattr('status', 'equalto', 'Occupied')|list|length }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-600 dark:text-gray-300">Available</span>
+              <span class="font-semibold text-green-600 dark:text-green-400">{{ slots|selectattr('status', 'equalto', 'Available')|list|length }}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
 </div>
+
+<!-- SCRIPTS -->
+<script>
+// Theme Toggle Functionality
+function toggleTheme() {
+  const html = document.documentElement;
+  const themeIcon = document.getElementById('themeIcon');
+  
+  // Toggle dark class on html element
+  html.classList.toggle('dark');
+  
+  // Update icon
+  if (html.classList.contains('dark')) {
+    themeIcon.classList.remove('fa-moon');
+    themeIcon.classList.add('fa-sun');
+    localStorage.setItem('theme', 'dark');
+  } else {
+    themeIcon.classList.remove('fa-sun');
+    themeIcon.classList.add('fa-moon');
+    localStorage.setItem('theme', 'light');
+  }
+}
+
+// Load saved theme on page load - must run immediately, not in DOMContentLoaded
+(function() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  const html = document.documentElement;
+  
+  if (savedTheme === 'dark') {
+    html.classList.add('dark');
+  } else {
+    html.classList.remove('dark');
+  }
+})();
+
+// Update icon after DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+  const html = document.documentElement;
+  const themeIcon = document.getElementById('themeIcon');
+  
+  if (html.classList.contains('dark')) {
+    if (themeIcon) {
+      themeIcon.classList.remove('fa-moon');
+      themeIcon.classList.add('fa-sun');
+    }
+  } else {
+    if (themeIcon) {
+      themeIcon.classList.remove('fa-sun');
+      themeIcon.classList.add('fa-moon');
+    }
+  }
+  
+  // Initialize filter
+  filterRecords();
+});
+
+/* PROFILE MENU */
+function toggleProfile() {
+  document.getElementById("profileMenu").classList.toggle("hidden");
+}
+
+/* FILTER AND SEARCH RECORDS */
+function filterRecords() {
+  const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+  const filterValue = document.getElementById("filterSelect").value;
+  const cards = document.querySelectorAll(".vehicle-card");
+  let visibleCount = 0;
+  
+  cards.forEach(card => {
+    const vehicleNo = card.dataset.vehicleNo || "";
+    const owner = card.dataset.owner || "";
+    const status = card.dataset.status || "";
+    
+    const matchesSearch = vehicleNo.includes(searchTerm) || owner.includes(searchTerm);
+    const matchesFilter = filterValue === "all" || status === filterValue;
+    
+    if (matchesSearch && matchesFilter) {
+      card.style.display = "block";
+      visibleCount++;
+    } else {
+      card.style.display = "none";
+    }
+  });
+  
+  // Show/hide empty state
+  const emptyState = document.getElementById("emptyState");
+  if (visibleCount === 0) {
+    emptyState.classList.remove("hidden");
+  } else {
+    emptyState.classList.add("hidden");
+  }
+}
+
+/* SORT RECORDS */
+function sortRecords() {
+  const container = document.getElementById("recordsContainer");
+  const cards = Array.from(container.querySelectorAll(".vehicle-card"));
+  const type = document.getElementById("sortSelect").value;
+  
+  cards.sort((a, b) => {
+    const d1 = new Date(a.dataset.entry);
+    const d2 = new Date(b.dataset.entry);
+    return type === "new" ? d2 - d1 : d1 - d2;
+  });
+  
+  cards.forEach(card => container.appendChild(card));
+}
+</script>
 
 </body>
 </html>

@@ -1,29 +1,185 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Park Vehicle</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/login-style.css') }}">
+  <meta charset="UTF-8">
+  <title>VPMS | Vehicle Entry</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tailwind with Dark Mode Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-<body>
 
-<div class="form-container">
-  <form method="POST">
-    <h2>Vehicle Entry</h2>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
 
-    <div class="input-group">
-      <input type="text" name="vehicle_no" required>
-      <label>Vehicle Number</label>
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-white dark:bg-gray-800 shadow-md p-6 flex flex-col h-screen sticky top-0 transition-colors">
+    <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-8">VPMS</h2>
+
+    <nav class="flex-1 space-y-2">
+      <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+        <i class="fa-solid fa-chart-line"></i> Dashboard
+      </a>
+
+      <a href="/payments" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+        <i class="fa-solid fa-credit-card"></i> Payments
+      </a>
+
+      <a href="/vehicle-entry" class="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Vehicle Entry
+      </a>
+
+      <a href="/vehicle-exit" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Vehicle Exit
+      </a>
+    </nav>
+
+    <a href="/logout" class="flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </a>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 p-8">
+
+    <!-- HEADER -->
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold dark:text-white">Vehicle Entry</h1>
+        <p class="text-gray-500 dark:text-gray-400">
+          Register a new vehicle entering the parking area
+        </p>
+      </div>
+
+      <!-- THEME TOGGLE -->
+      <button 
+        id="themeToggle"
+        onclick="toggleTheme()"
+        class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+        title="Toggle theme"
+      >
+        <i id="themeIcon" class="fa-solid fa-moon text-gray-700 dark:text-gray-300"></i>
+      </button>
     </div>
 
-    <div class="input-group">
-      <input type="text" name="owner_name" required>
-      <label>Owner Name</label>
+    <!-- ENTRY FORM -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-8 max-w-xl transition-colors">
+
+      {% if error %}
+      <div class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300 p-3 rounded-lg mb-4">
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="POST" class="space-y-6">
+
+        <!-- VEHICLE NUMBER -->
+        <div>
+          <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+            Vehicle Number
+          </label>
+          <div class="relative">
+            <i class="fa-solid fa-car absolute left-3 top-3 text-gray-400 dark:text-gray-500"></i>
+            <input
+              type="text"
+              name="vehicle_no"
+              required
+              placeholder="AP09AB1234"
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+          </div>
+        </div>
+
+        <!-- OWNER NAME -->
+        <div>
+          <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+            Owner Name
+          </label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-3 top-3 text-gray-400 dark:text-gray-500"></i>
+            <input
+              type="text"
+              name="owner_name"
+              required
+              placeholder="Enter owner name"
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+          </div>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="flex gap-4 pt-4">
+          <button
+            type="submit"
+            class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+          >
+            <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i>
+            Register Entry
+          </button>
+
+          <a
+            href="/dashboard"
+            class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-6 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+          >
+            Cancel
+          </a>
+        </div>
+
+      </form>
     </div>
 
-    <button type="submit">Park Vehicle</button>
-    <a href="/dashboard">Back to Dashboard</a>
-  </form>
+  </main>
+
 </div>
+
+<script>
+// Theme initialization - must run before page renders
+(function() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  const html = document.documentElement;
+  if (savedTheme === 'dark') {
+    html.classList.add('dark');
+  }
+})();
+
+// Theme Toggle Functionality
+function toggleTheme() {
+  const html = document.documentElement;
+  const themeIcon = document.getElementById('themeIcon');
+  
+  html.classList.toggle('dark');
+  
+  if (html.classList.contains('dark')) {
+    themeIcon.classList.remove('fa-moon');
+    themeIcon.classList.add('fa-sun');
+    localStorage.setItem('theme', 'dark');
+  } else {
+    themeIcon.classList.remove('fa-sun');
+    themeIcon.classList.add('fa-moon');
+    localStorage.setItem('theme', 'light');
+  }
+}
+
+// Update icon after DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+  const html = document.documentElement;
+  const themeIcon = document.getElementById('themeIcon');
+  
+  if (html.classList.contains('dark') && themeIcon) {
+    themeIcon.classList.remove('fa-moon');
+    themeIcon.classList.add('fa-sun');
+  }
+});
+</script>
 
 </body>
 </html>

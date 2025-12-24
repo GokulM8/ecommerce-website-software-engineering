@@ -1,36 +1,502 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Vehicle Exit</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/login-style.css') }}">
+  <meta charset="UTF-8">
+  <title>VPMS | Vehicle Exit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tailwind with Dark Mode Configuration -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- QR Code Library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
-<body>
 
-<div class="form-container">
-  {% if success %}
-    <h2 class="success">Exit Successful!</h2>
-    <p><strong>Vehicle:</strong> {{ vehicle_no }}</p>
-    <p><strong>Slot:</strong> {{ slot_name }}</p>
-    <p><strong>Fee:</strong> ₹{{ fee }}</p>
-    <a href="/dashboard">Back to Dashboard</a>
-  {% else %}
-    <form method="POST">
-      <h2>Vehicle Exit</h2>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
 
-      {% if error %}
-        <p class="error">{{ error }}</p>
-      {% endif %}
+<div class="flex min-h-screen">
 
-      <div class="input-group">
-        <input type="text" name="vehicle_no" required>
-        <label>Vehicle Number</label>
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-white dark:bg-gray-800 shadow-md p-6 flex flex-col h-screen sticky top-0 transition-colors">
+    <h2 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-8">VPMS</h2>
+
+    <nav class="flex-1 space-y-2">
+      <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+        <i class="fa-solid fa-chart-line"></i> Dashboard
+      </a>
+
+      <a href="/payments" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+        <i class="fa-solid fa-credit-card"></i> Payments
+      </a>
+
+      <a href="/vehicle-entry" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Vehicle Entry
+      </a>
+
+      <a href="/vehicle-exit" class="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Vehicle Exit
+      </a>
+    </nav>
+
+    <a href="/logout" class="flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </a>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 p-8">
+
+    <!-- HEADER -->
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold dark:text-white">Vehicle Exit</h1>
+        <p class="text-gray-500 dark:text-gray-400">
+          Complete parking and calculate exit fee
+        </p>
       </div>
 
-      <button type="submit">Exit Vehicle</button>
-      <a href="/dashboard">Back to Dashboard</a>
-    </form>
-  {% endif %}
+      <!-- THEME TOGGLE -->
+      <button 
+        id="themeToggle"
+        onclick="toggleTheme()"
+        class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+        title="Toggle theme"
+      >
+        <i id="themeIcon" class="fa-solid fa-moon text-gray-700 dark:text-gray-300"></i>
+      </button>
+    </div>
+
+    <!-- EXIT FORM / RESULT -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-8 max-w-xl transition-colors">
+
+      <!-- ERROR MESSAGE -->
+      {% if error %}
+      <div class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300 p-3 rounded-lg mb-4">
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <!-- SUCCESS MESSAGE -->
+      {% if success %}
+      <div class="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300 p-4 rounded-lg mb-6">
+        <p class="font-semibold mb-2">Vehicle Exited Successfully</p>
+        <p><strong>Vehicle No:</strong> {{ vehicle_no }}</p>
+        <p><strong>Slot:</strong> {{ slot_name }}</p>
+        <p><strong>Fee:</strong> ₹ {{ fee }}</p>
+        <p><strong>Payment Platform:</strong> {{ payment_platform }}</p>
+      </div>
+      {% endif %}
+
+      <!-- EXIT FORM -->
+      <form method="POST" id="exitForm" action="/vehicle-exit" class="space-y-6">
+
+        <div>
+          <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+            Vehicle Number
+          </label>
+          <div class="relative">
+            <i class="fa-solid fa-car absolute left-3 top-3 text-gray-400 dark:text-gray-500"></i>
+            <input
+              type="text"
+              name="vehicle_no"
+              id="vehicle_no"
+              required
+              placeholder="AP09AB1234"
+              class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+            Payment Platform
+          </label>
+          <div class="relative">
+            <select
+              name="payment_platform"
+              id="payment_platform"
+              required
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="Cash">Cash</option>
+              <option value="UPI">UPI (PhonePe, Google Pay, Paytm)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="flex gap-4 pt-4">
+          <button
+            type="button"
+            id="processBtn"
+            class="bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700 transition"
+          >
+            <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i>
+            Process Exit
+          </button>
+
+          <a
+            href="/dashboard"
+            class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-6 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+          >
+            Back to Dashboard
+          </a>
+        </div>
+
+      </form>
+    </div>
+
+  </main>
+
 </div>
+
+<!-- UPI QR CODE MODAL -->
+<div id="qrModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 transition-colors">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Scan to Pay via UPI</h3>
+      <button id="closeQR" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+        <i class="fa-solid fa-times text-xl"></i>
+      </button>
+    </div>
+
+    <div class="text-center mb-6">
+      <div class="bg-white dark:bg-gray-700 p-6 rounded-lg border-2 border-gray-200 dark:border-gray-600 inline-block mb-4">
+        <!-- QR Code Container -->
+        <div id="qrCodeContainer" class="w-64 h-64 flex items-center justify-center">
+          <div class="text-center">
+            <i class="fa-solid fa-spinner fa-spin text-4xl text-gray-400 dark:text-gray-500 mb-2"></i>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Generating QR Code...</p>
+          </div>
+        </div>
+      </div>
+      <p class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">Amount: ₹ <span id="paymentAmount">0</span></p>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Scan with any UPI app to pay</p>
+      <p id="upiIdDisplay" class="text-xs text-gray-400 dark:text-gray-500 mt-2"></p>
+    </div>
+
+    <div class="space-y-3">
+      <button
+        id="paymentReceived"
+        class="w-full bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition"
+      >
+        <i class="fa-solid fa-check-circle mr-2"></i>
+        Payment Received
+      </button>
+      <button
+        id="paymentFailed"
+        class="w-full bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition"
+      >
+        <i class="fa-solid fa-times-circle mr-2"></i>
+        Payment Failed
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT FAILED MODAL -->
+<div id="failedModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 transition-colors">
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa-solid fa-exclamation-triangle text-red-600 dark:text-red-400 text-2xl"></i>
+      </div>
+      <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Payment Failed</h3>
+      <p class="text-gray-600 dark:text-gray-400">What would you like to do?</p>
+    </div>
+
+    <div class="space-y-3">
+      <button
+        id="retryUPI"
+        class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+      >
+        <i class="fa-solid fa-redo mr-2"></i>
+        Retry UPI Payment
+      </button>
+      <button
+        id="changeToCash"
+        class="w-full bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700 transition"
+      >
+        <i class="fa-solid fa-money-bill-wave mr-2"></i>
+        Change to Cash Payment
+      </button>
+      <button
+        id="cancelExit"
+        class="w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let calculatedFee = 0;
+let vehicleInfo = null;
+let userUPIId = null;
+
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle form submission
+  const processBtn = document.getElementById('processBtn');
+  if (processBtn) {
+    processBtn.addEventListener('click', async function(e) {
+      e.preventDefault();
+      
+      const paymentPlatform = document.getElementById('payment_platform').value;
+      const vehicleNo = document.getElementById('vehicle_no').value;
+
+      if (!vehicleNo) {
+        alert('Please enter vehicle number');
+        return;
+      }
+
+      if (paymentPlatform === 'UPI') {
+        // Calculate fee first
+        try {
+          const response = await fetch('/calculate-fee', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ vehicle_no: vehicleNo })
+          });
+
+          const data = await response.json();
+          
+          if (data.error) {
+            alert(data.error);
+            return;
+          }
+
+          calculatedFee = data.fee;
+          vehicleInfo = data;
+          userUPIId = data.upi_id;
+          document.getElementById('paymentAmount').textContent = calculatedFee;
+          
+          // Check if UPI ID exists
+          if (!userUPIId) {
+            alert('Please set your UPI ID in the profile section first.');
+            return;
+          }
+          
+          showQRModal();
+        } catch (error) {
+          alert('Error calculating fee. Please try again.');
+          console.error('Error:', error);
+        }
+      } else {
+        // Cash payment - submit directly
+        document.getElementById('exitForm').submit();
+      }
+    });
+  }
+
+  function showQRModal() {
+    const qrModal = document.getElementById('qrModal');
+    if (qrModal) {
+      qrModal.classList.remove('hidden');
+      
+      // Generate QR code
+      generateQRCode();
+    }
+  }
+
+  function generateQRCode() {
+    const container = document.getElementById('qrCodeContainer');
+    const upiIdDisplay = document.getElementById('upiIdDisplay');
+    
+    if (!userUPIId) {
+      container.innerHTML = `
+        <div class="text-center">
+          <i class="fa-solid fa-exclamation-triangle text-4xl text-red-400 mb-2"></i>
+          <p class="text-sm text-red-600">UPI ID not set</p>
+          <p class="text-xs text-gray-500 mt-1">Please set UPI ID in profile</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Clear container
+    container.innerHTML = '';
+    
+    // Create UPI payment string
+    // Format: upi://pay?pa=UPI_ID&pn=MerchantName&am=AMOUNT&cu=INR
+    const upiString = `upi://pay?pa=${userUPIId}&pn=VPMS&am=${calculatedFee}&cu=INR`;
+    
+    // Display UPI ID
+    if (upiIdDisplay) {
+      upiIdDisplay.textContent = `Pay to: ${userUPIId}`;
+    }
+    
+    // Generate QR code
+    QRCode.toCanvas(container, upiString, {
+      width: 256,
+      height: 256,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    }, function (error) {
+      if (error) {
+        console.error('QR Code generation error:', error);
+        container.innerHTML = `
+          <div class="text-center">
+            <i class="fa-solid fa-exclamation-triangle text-4xl text-red-400 mb-2"></i>
+            <p class="text-sm text-red-600">Error generating QR code</p>
+            <p class="text-xs text-gray-500 mt-1">UPI ID: ${userUPIId}</p>
+          </div>
+        `;
+      }
+    });
+  }
+
+  // Close QR modal
+  const closeQR = document.getElementById('closeQR');
+  if (closeQR) {
+    closeQR.addEventListener('click', function() {
+      const qrModal = document.getElementById('qrModal');
+      if (qrModal) {
+        qrModal.classList.add('hidden');
+      }
+    });
+  }
+
+  // Payment received - submit form
+  const paymentReceived = document.getElementById('paymentReceived');
+  if (paymentReceived) {
+    paymentReceived.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('Payment received clicked');
+      
+      const qrModal = document.getElementById('qrModal');
+      if (qrModal) {
+        qrModal.classList.add('hidden');
+      }
+      
+      // Ensure payment platform is set to UPI
+      const paymentPlatform = document.getElementById('payment_platform');
+      if (paymentPlatform) {
+        paymentPlatform.value = 'UPI';
+      }
+      
+      // Ensure vehicle number is still in the form
+      const vehicleNo = document.getElementById('vehicle_no');
+      if (!vehicleNo || !vehicleNo.value) {
+        alert('Vehicle number is required');
+        return;
+      }
+      
+      // Submit the form
+      const form = document.getElementById('exitForm');
+      if (form) {
+        console.log('Submitting form...');
+        form.submit();
+      } else {
+        console.error('Form not found');
+        alert('Error: Form not found. Please refresh the page.');
+      }
+    });
+  }
+
+  // Payment failed - show options
+  const paymentFailed = document.getElementById('paymentFailed');
+  if (paymentFailed) {
+    paymentFailed.addEventListener('click', function() {
+      const qrModal = document.getElementById('qrModal');
+      const failedModal = document.getElementById('failedModal');
+      if (qrModal) qrModal.classList.add('hidden');
+      if (failedModal) failedModal.classList.remove('hidden');
+    });
+  }
+
+  // Retry UPI
+  const retryUPI = document.getElementById('retryUPI');
+  if (retryUPI) {
+    retryUPI.addEventListener('click', function() {
+      const failedModal = document.getElementById('failedModal');
+      if (failedModal) failedModal.classList.add('hidden');
+      showQRModal();
+    });
+  }
+
+  // Change to Cash - submit form
+  const changeToCash = document.getElementById('changeToCash');
+  if (changeToCash) {
+    changeToCash.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('Change to cash clicked');
+      
+      // Change payment platform to Cash
+      const paymentPlatform = document.getElementById('payment_platform');
+      if (paymentPlatform) {
+        paymentPlatform.value = 'Cash';
+      }
+      
+      const failedModal = document.getElementById('failedModal');
+      if (failedModal) {
+        failedModal.classList.add('hidden');
+      }
+      
+      // Ensure vehicle number is still in the form
+      const vehicleNo = document.getElementById('vehicle_no');
+      if (!vehicleNo || !vehicleNo.value) {
+        alert('Vehicle number is required');
+        return;
+      }
+      
+      // Submit the form
+      const form = document.getElementById('exitForm');
+      if (form) {
+        console.log('Submitting form with cash payment...');
+        form.submit();
+      } else {
+        console.error('Form not found');
+        alert('Error: Form not found. Please refresh the page.');
+      }
+    });
+  }
+
+  // Cancel
+  const cancelExit = document.getElementById('cancelExit');
+  if (cancelExit) {
+    cancelExit.addEventListener('click', function() {
+      const failedModal = document.getElementById('failedModal');
+      if (failedModal) {
+        failedModal.classList.add('hidden');
+      }
+    });
+  }
+
+  // Close modals when clicking outside
+  const qrModal = document.getElementById('qrModal');
+  if (qrModal) {
+    qrModal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.add('hidden');
+      }
+    });
+  }
+
+  const failedModal = document.getElementById('failedModal');
+  if (failedModal) {
+    failedModal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.add('hidden');
+      }
+    });
+  }
+});
+</script>
 
 </body>
 </html>
